@@ -2,23 +2,52 @@ angular.module('starter.controllers', [])
 
 .controller('DashCtrl', function($scope) {})
 
-.controller('ChatsCtrl', function($scope, Chats) {
-  // With the new view caching in Ionic, Controllers are only called
-  // when they are recreated or on app start, instead of every page change.
-  // To listen for when this page is active (for example, to refresh data),
-  // listen for the $ionicView.enter event:
-  //
-  //$scope.$on('$ionicView.enter', function(e) {
-  //});
+.controller('ChatsCtrl', function($scope, $rootScope, Chats) {
+  $scope.users = [];
 
-  $scope.chats = Chats.all();
-  $scope.remove = function(chat) {
-    Chats.remove(chat);
+  var promise = Chats.init();
+  promise.then(function(data) {
+    $scope.users = data.result;
+  }, function(data) {
+    console.log('get data error...');
+  });
+
+  $scope.upLoading = function() {
+    if ($scope.users.length) {
+      var promise = Chats.upLoad($scope.users[0]._id);
+      promise.then(function (data) {
+        for (var i = 0; i < data.result.length; i++) {
+          $scope.users.unshift(data.result[i]);
+        }
+      }, function (data) {
+        console.log('get data error...');
+      });
+    }
+    $scope.$broadcast('scroll.refreshComplete');
+  };
+
+  $scope.downLoading = function() {
+    if ($scope.users.length) {
+      var promise = Chats.downLoad($scope.users[$scope.users.length-1]._id);
+      promise.then(function(data) {
+        for (var i = 0; i < data.result.length; i++) {
+          $scope.users.push(data.result[i]);
+        }
+      }, function(data) {
+        console.log('get data error...');
+      });
+    }
+    $scope.$broadcast('scroll.infiniteScrollComplete');
   };
 })
 
 .controller('ChatDetailCtrl', function($scope, $stateParams, Chats) {
-  $scope.chat = Chats.get($stateParams.chatId);
+  var promise = Chats.get($stateParams.userid);
+  promise.then(function(data) {
+    $scope.user = data.result[0];
+  }, function(data) {
+    console.log('get data error...');
+  });
 })
 
 .controller('AccountCtrl', function($scope) {
